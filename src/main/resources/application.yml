@@ -1,0 +1,16 @@
+server:
+  port: 7071
+  
+#eureka:
+#    instance:
+ #     hostname: localhost
+spring:
+  application:
+    name: student-service
+  datasource:
+    password: mani
+    url: jdbc:mysql://localhost:3306/pip
+    username: root
+  jpa:
+    hibernate:
+      ddl-auto: update
