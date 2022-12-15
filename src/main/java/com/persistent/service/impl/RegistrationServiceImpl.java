@@ -1,7 +1,9 @@
 package com.persistent.service.impl;
 
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,16 +84,21 @@ public class RegistrationServiceImpl implements RegistrationService {
 	@Override
 	public StatusDto ticketAvailability(AvailabilityDto reqDto) {
 
-		Availability availability = availabilityRepository.findByTrainTrainIdAndDate(reqDto.getTrainId(),
+		List<Availability> availabilities = availabilityRepository.findByTrainTrainIdAndDate(reqDto.getTrainId(),
 				reqDto.getDate());
 		TrainInfo trainInfo = trainInfoRepository.findByTrainId(reqDto.getTrainId());
-		if (availability == null) {
-			availabilityRepository.save(new Availability(null, reqDto.getDate(), trainInfo, trainInfo.getTotalSeats(),
-					new Date(), trainInfo.getTotalSeats() / 2, trainInfo.getTotalSeats() / 2));
+		int seatsPerCoach = trainInfo.getTotalSeats() / trainInfo.getNoOfCoaches();
+		if (availabilities.isEmpty()) {
+			for (int i = 1; i < trainInfo.getNoOfCoaches() + 1; i++) {
+				availabilityRepository.save(new Availability(null, reqDto.getDate(), trainInfo, new Date(),
+						seatsPerCoach / 2, seatsPerCoach / 2, "c" + i));
+			}
+
 			return new StatusDto(0, AppConstants.SEATS_AVAILABLE);
 		}
 
-		if (availability.getNoOfSeatsAvailable() != 0)
+		if (availabilities.stream().collect(Collectors.summingInt(Availability::getNoOfLowerSeatsAvailable))
+				+ availabilities.stream().collect(Collectors.summingInt(Availability::getNoOfUpperSeatsAvailable)) != 0)
 			return new StatusDto(0, AppConstants.SEATS_AVAILABLE);
 		return new StatusDto(1, AppConstants.SEATS_NOT_AVAILABLE);
 	}
@@ -99,62 +106,105 @@ public class RegistrationServiceImpl implements RegistrationService {
 	@Override
 	public Ticket bookTicket(BookTicketDto reqDto) {
 		Passenger passenger = passengerRepository.findByPassengerId(reqDto.getPassengerId());
-		Availability availability = availabilityRepository.findByTrainTrainIdAndDate(reqDto.getTrainId(),
+		List<Availability> availabilities = availabilityRepository.findByTrainTrainIdAndDate(reqDto.getTrainId(),
 				reqDto.getDate());
+		String seatNumber = null;
+		String coach = null;
 
 		TrainInfo trainInfo = trainInfoRepository.findByTrainId(reqDto.getTrainId());
 		Ticket ticket = new Ticket();
-		if (availability != null) {
-			if (availability.getNoOfSeatsAvailable() == 0) {
+		if (!availabilities.isEmpty()) {
+			if (availabilities.stream().collect(Collectors.summingInt(Availability::getNoOfLowerSeatsAvailable))
+					+ availabilities.stream()
+							.collect(Collectors.summingInt(Availability::getNoOfUpperSeatsAvailable)) == 0) {
 				throw new ReservationException(AppConstants.SEATS_NOT_AVAILABLE, HttpStatus.ACCEPTED, Severity.INFO);
 			} else if (AppConstants.LOWER.equalsIgnoreCase(reqDto.getBerthType())
-					|| passenger.getGender().equalsIgnoreCase(AppConstants.FEMALE) || passenger.getAge() < 15
-					|| passenger.getAge() > 40) {
-				if (availability.getNoOfLowerSeatsAvailable() == 0)
+					|| (passenger.getGender().equalsIgnoreCase(AppConstants.FEMALE) && passenger.getAge() > 40)
+					|| passenger.getAge() < 15 || passenger.getAge() > 60) {
+				if (availabilities.stream()
+						.collect(Collectors.summingInt(Availability::getNoOfLowerSeatsAvailable)) == 0)
 					throw new ReservationException(AppConstants.SEATS_NOT_AVAILABLE_IN_LOWER, HttpStatus.ACCEPTED,
 							Severity.INFO);
 				else {
+					Availability availability = availabilities.stream()
+							.collect(Collectors.maxBy(Comparator.comparing(Availability::getNoOfLowerSeatsAvailable)))
+							.get();
+
 					availability.setNoOfLowerSeatsAvailable(availability.getNoOfLowerSeatsAvailable() - 1);
-					availability.setNoOfSeatsAvailable(availability.getNoOfSeatsAvailable() - 1);
+					availabilityRepository.save(availability);
+					seatNumber = availability.getCoach() + "-" + (availability.getNoOfLowerSeatsAvailable()+1);
+					coach = availability.getCoach();
 					ticket.setBerthType(AppConstants.LOWER);
 				}
 			} else {
-				availability.setNoOfUpperSeatsAvailable(availability.getNoOfUpperSeatsAvailable() - 1);
-				availability.setNoOfSeatsAvailable(availability.getNoOfSeatsAvailable() - 1);
-				ticket.setBerthType(AppConstants.UPPER);
+				if (availabilities.stream()
+						.collect(Collectors.summingInt(Availability::getNoOfUpperSeatsAvailable)) != 0) {
+					Availability availability = availabilities.stream()
+							.collect(Collectors.maxBy(Comparator.comparing(Availability::getNoOfUpperSeatsAvailable)))
+							.get();
+					availability.setNoOfUpperSeatsAvailable(availability.getNoOfUpperSeatsAvailable() - 1);
+					availabilityRepository.save(availability);
+					seatNumber = availability.getCoach() + "-" + (availability.getNoOfUpperSeatsAvailable()+1);
+					coach = availability.getCoach();
+					ticket.setBerthType(AppConstants.UPPER);
+				} else {
+					Availability availability = availabilities.stream()
+							.collect(Collectors.maxBy(Comparator.comparing(Availability::getNoOfLowerSeatsAvailable)))
+							.get();
+					availability.setNoOfLowerSeatsAvailable(availability.getNoOfLowerSeatsAvailable() - 1);
+					ticket.setBerthType(AppConstants.LOWER);
+					seatNumber = availability.getCoach() + "-" + (availability.getNoOfLowerSeatsAvailable()+1);
+					coach = availability.getCoach();
+					availabilityRepository.save(availability);
+				}
+
 			}
 		} else {
-			availability = new Availability();
-			availability.setNoOfSeatsAvailable(trainInfo.getTotalSeats() - 1);
+
+			int seatsPerCoach = trainInfo.getTotalSeats() / trainInfo.getNoOfCoaches();
 			if (AppConstants.LOWER.equalsIgnoreCase(reqDto.getBerthType())
-					|| passenger.getGender().equalsIgnoreCase(AppConstants.FEMALE) || passenger.getAge() < 15
-					|| passenger.getAge() > 40) {
-				availability.setNoOfLowerSeatsAvailable(trainInfo.getTotalSeats() / 2 - 1);
-				availability.setNoOfUpperSeatsAvailable(trainInfo.getTotalSeats() / 2);
+					|| (passenger.getGender().equalsIgnoreCase(AppConstants.FEMALE) && passenger.getAge() > 40)
+					|| passenger.getAge() < 15 || passenger.getAge() > 60) {
+				for (int i = 1; i < trainInfo.getNoOfCoaches() + 1; i++) {
+					if (i == 1) {
+						availabilityRepository.save(new Availability(null, reqDto.getDate(), trainInfo, new Date(),
+								seatsPerCoach / 2, (seatsPerCoach / 2) - 1, "c" + i));
+						seatNumber = "c" + i + "-" + (seatsPerCoach / 2);
+						coach = "c" + i;
+					} else {
+						availabilityRepository.save(new Availability(null, reqDto.getDate(), trainInfo, new Date(),
+								seatsPerCoach / 2, (seatsPerCoach / 2), "c" + i));
+
+					}
+				}
 				ticket.setBerthType(AppConstants.LOWER);
 			} else {
-				availability.setNoOfUpperSeatsAvailable(trainInfo.getTotalSeats() / 2 - 1);
-				availability.setNoOfLowerSeatsAvailable(trainInfo.getTotalSeats() / 2);
+				for (int i = 1; i < trainInfo.getNoOfCoaches() + 1; i++) {
+					if (i == 1) {
+						availabilityRepository.save(new Availability(null, reqDto.getDate(), trainInfo, new Date(),
+								(seatsPerCoach / 2) - 1, seatsPerCoach / 2, "c" + i));
+						seatNumber = "c" + i + "-" + (seatsPerCoach / 2);
+						coach = "c" + i;
+					} else {
+						availabilityRepository.save(new Availability(null, reqDto.getDate(), trainInfo, new Date(),
+								seatsPerCoach / 2, (seatsPerCoach / 2), "c" + i));
+
+					}
+				}
 				ticket.setBerthType(AppConstants.UPPER);
 			}
-
-			availability.setDate(reqDto.getDate());
-			availability.setTrain(trainInfo);
 		}
-
-		/* modelMapper.map(reqDto, Ticket.class); */
 		ticket.setTicketCost(reqDto.getTicketCost());
-
 		ticket.setStartingLocation(reqDto.getStartingLocation());
 		ticket.setDestination(reqDto.getDestination());
 		ticket.setDate(reqDto.getDate());
 		ticket.setStatus(0);
-		ticket.setSeatNumber(availability.getNoOfSeatsAvailable());
+		ticket.setCoach(coach);
+		ticket.setSeatNumber(seatNumber);
 		ticket.setTrain(trainInfo);
 		ticket.setPassenger(passenger);
 		ticketRepository.save(ticket);
 		paymentRepository.save(new Payment(null, passenger, reqDto.getCardType(), reqDto.getCardNumber(), new Date()));
-		availabilityRepository.save(availability);
 		return ticket;
 	}
 
@@ -168,14 +218,13 @@ public class RegistrationServiceImpl implements RegistrationService {
 		}
 		ticket.setStatus(1);
 		ticketRepository.save(ticket);
-		Availability availability = availabilityRepository.findByTrainTrainIdAndDate(ticket.getTrain().getTrainId(),
-				ticket.getDate());
+		Availability availability = availabilityRepository
+				.findByTrainTrainIdAndDateAndCoach(ticket.getTrain().getTrainId(), ticket.getDate(), ticket.getCoach());
 		if (AppConstants.LOWER.equalsIgnoreCase(ticket.getBerthType()))
 			availability.setNoOfLowerSeatsAvailable(availability.getNoOfLowerSeatsAvailable() + 1);
 		else
 			availability.setNoOfUpperSeatsAvailable(availability.getNoOfUpperSeatsAvailable() + 1);
 
-		availability.setNoOfSeatsAvailable(availability.getNoOfSeatsAvailable() + 1);
 		availabilityRepository.save(availability);
 		return new StatusDto(1, AppConstants.TICKET_CANCELLED_SUCCESSFULLY);
 	}

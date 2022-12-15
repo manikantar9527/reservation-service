@@ -31,13 +31,16 @@ public class Availability {
 	@ManyToOne
 	@JoinColumn(name = "train_id")
 	private TrainInfo train;
-	private Integer noOfSeatsAvailable;
+	//private Integer noOfSeatsAvailable;
+	
+	
 	
 	@CreatedDate
 	private Date createdOn;
 	
 	private Integer noOfUpperSeatsAvailable;
 	private Integer noOfLowerSeatsAvailable;
+	private String coach;
 	
 	
 }

@@ -27,8 +27,6 @@ public class Ticket {
 	@SequenceGenerator(name = "ticket_seq", allocationSize = 5)
 	@Column(name = "ticket_id", unique = true, nullable = false)
 	private Long ticketId;
-	private String ticketNumber;
-	private String ticketName;
 	@ManyToOne
 	@JoinColumn(name = "train_id")
 	private TrainInfo train;
@@ -39,11 +37,11 @@ public class Ticket {
 	private Double ticketCost;
 	private String startingLocation;
 	private String destination;
-	private Integer availableSeats;
 	private int status;
 	private Date date;
 	private String berthType;
-	private Integer seatNumber;
+	private String seatNumber;
+	private String coach;
 
 	@CreatedDate
 	private Date createdOn;

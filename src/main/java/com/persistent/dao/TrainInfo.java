@@ -36,6 +36,7 @@ public class TrainInfo {
 	private String availableDays;
 	private String departuretime;
 	private Integer totalSeats;
+	private Integer noOfCoaches;
 
 	
 	private String arrivalTime;
