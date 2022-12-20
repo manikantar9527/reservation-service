@@ -38,7 +38,7 @@ public class PassengerController {
 	public ResponseEntity<PassengerDto> updatePassengerDetails(@RequestBody PassengerDto passenger) {
 		return ResponseEntity.ok(service.addPassengerDetails(passenger));
 	}
-	
+
 	@PostMapping("add/availability")
 	public ResponseEntity<StatusDto> addAvailability(@RequestBody AvailabilityDto reqDto) {
 		return ResponseEntity.ok(service.addAvailability(reqDto));
@@ -55,7 +55,7 @@ public class PassengerController {
 	}
 
 	@PostMapping("ticket/availability")
-	public ResponseEntity<List<Availability> > ticketAvailability(@RequestBody AvailabilityDto reqDto) {
+	public ResponseEntity<List<Availability>> ticketAvailability(@RequestBody AvailabilityDto reqDto) {
 		return ResponseEntity.ok(service.ticketAvailability(reqDto));
 	}
 

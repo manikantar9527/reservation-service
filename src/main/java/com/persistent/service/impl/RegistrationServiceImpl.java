@@ -31,7 +31,10 @@ import com.persistent.repository.TicketRepository;
 import com.persistent.repository.TrainInfoRepository;
 import com.persistent.service.RegistrationService;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class RegistrationServiceImpl implements RegistrationService {
 
 	@Autowired
@@ -54,18 +57,19 @@ public class RegistrationServiceImpl implements RegistrationService {
 
 	@Override
 	public PassengerDto addPassengerDetails(PassengerDto reqDto) {
-		
+		log.info("input request details" + reqDto);
 		if (reqDto.getUserId() != null) {
-			if (passengerRepository.findByUserIdOrContactNumber(reqDto.getUserId(),reqDto.getContactNumber()) == null) {
+			if (passengerRepository.findByUserIdOrContactNumber(reqDto.getUserId(),
+					reqDto.getContactNumber()) == null) {
 				throw new ReservationException(AppConstants.INVALID_MOBILENUMBER, HttpStatus.BAD_REQUEST,
 						Severity.INFO);
 			}
 		}
-		if(passengerRepository.findByContactNumber(reqDto.getContactNumber()) != null)
-			throw new ReservationException(AppConstants.USER_ALREADY_REGISTERED, HttpStatus.BAD_REQUEST,
-					Severity.INFO);
-		
+		if (passengerRepository.findByContactNumber(reqDto.getContactNumber()) != null)
+			throw new ReservationException(AppConstants.USER_ALREADY_REGISTERED, HttpStatus.BAD_REQUEST, Severity.INFO);
+
 		passengerRepository.save(modelMapper.map(reqDto, Passenger.class));
+		log.info("");
 		return reqDto;
 	}
 
@@ -88,8 +92,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
 	@Override
 	public List<Availability> ticketAvailability(AvailabilityDto reqDto) {
-		return availabilityRepository.findByTrainTrainIdAndDate(reqDto.getTrainId(),
-				reqDto.getDate());
+		return availabilityRepository.findByTrainTrainIdAndDate(reqDto.getTrainId(), reqDto.getDate());
 	}
 
 	@Override
@@ -121,7 +124,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
 					availability.setNoOfLowerSeatsAvailable(availability.getNoOfLowerSeatsAvailable() - 1);
 					availabilityRepository.save(availability);
-					seatNumber = availability.getCoach() + "-" + (availability.getNoOfLowerSeatsAvailable()+1);
+					seatNumber = availability.getCoach() + "-" + (availability.getNoOfLowerSeatsAvailable() + 1);
 					coach = availability.getCoach();
 					ticket.setBerthType(AppConstants.LOWER);
 				}
@@ -133,7 +136,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 							.get();
 					availability.setNoOfUpperSeatsAvailable(availability.getNoOfUpperSeatsAvailable() - 1);
 					availabilityRepository.save(availability);
-					seatNumber = availability.getCoach() + "-" + (availability.getNoOfUpperSeatsAvailable()+1);
+					seatNumber = availability.getCoach() + "-" + (availability.getNoOfUpperSeatsAvailable() + 1);
 					coach = availability.getCoach();
 					ticket.setBerthType(AppConstants.UPPER);
 				} else {
@@ -142,45 +145,11 @@ public class RegistrationServiceImpl implements RegistrationService {
 							.get();
 					availability.setNoOfLowerSeatsAvailable(availability.getNoOfLowerSeatsAvailable() - 1);
 					ticket.setBerthType(AppConstants.LOWER);
-					seatNumber = availability.getCoach() + "-" + (availability.getNoOfLowerSeatsAvailable()+1);
+					seatNumber = availability.getCoach() + "-" + (availability.getNoOfLowerSeatsAvailable() + 1);
 					coach = availability.getCoach();
 					availabilityRepository.save(availability);
 				}
 
-			}
-		} else {
-
-			int seatsPerCoach = trainInfo.getTotalSeats() / trainInfo.getNoOfCoaches();
-			if (AppConstants.LOWER.equalsIgnoreCase(reqDto.getBerthType())
-					|| (passenger.getGender().equalsIgnoreCase(AppConstants.FEMALE) && passenger.getAge() > 40)
-					|| passenger.getAge() < 15 || passenger.getAge() > 60) {
-				for (int i = 1; i < trainInfo.getNoOfCoaches() + 1; i++) {
-					if (i == 1) {
-						availabilityRepository.save(new Availability(null, reqDto.getDate(), trainInfo, new Date(),
-								seatsPerCoach / 2, (seatsPerCoach / 2) - 1, "c" + i));
-						seatNumber = "c" + i + "-" + (seatsPerCoach / 2);
-						coach = "c" + i;
-					} else {
-						availabilityRepository.save(new Availability(null, reqDto.getDate(), trainInfo, new Date(),
-								seatsPerCoach / 2, (seatsPerCoach / 2), "c" + i));
-
-					}
-				}
-				ticket.setBerthType(AppConstants.LOWER);
-			} else {
-				for (int i = 1; i < trainInfo.getNoOfCoaches() + 1; i++) {
-					if (i == 1) {
-						availabilityRepository.save(new Availability(null, reqDto.getDate(), trainInfo, new Date(),
-								(seatsPerCoach / 2) - 1, seatsPerCoach / 2, "c" + i));
-						seatNumber = "c" + i + "-" + (seatsPerCoach / 2);
-						coach = "c" + i;
-					} else {
-						availabilityRepository.save(new Availability(null, reqDto.getDate(), trainInfo, new Date(),
-								seatsPerCoach / 2, (seatsPerCoach / 2), "c" + i));
-
-					}
-				}
-				ticket.setBerthType(AppConstants.UPPER);
 			}
 		}
 		ticket.setTicketCost(reqDto.getTicketCost());
