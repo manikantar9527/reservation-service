@@ -54,19 +54,24 @@ public class RegistrationServiceImpl implements RegistrationService {
 
 	@Override
 	public PassengerDto addPassengerDetails(PassengerDto reqDto) {
-		if (reqDto.getPassengerId() == null) {
-			if (passengerRepository.findByMobileNumber(reqDto.getMobileNumber()) != null) {
-				throw new ReservationException(AppConstants.USER_ALREADY_REGISTERED, HttpStatus.BAD_REQUEST,
+		
+		if (reqDto.getUserId() != null) {
+			if (passengerRepository.findByUserIdOrContactNumber(reqDto.getUserId(),reqDto.getContactNumber()) == null) {
+				throw new ReservationException(AppConstants.INVALID_MOBILENUMBER, HttpStatus.BAD_REQUEST,
 						Severity.INFO);
 			}
 		}
+		if(passengerRepository.findByContactNumber(reqDto.getContactNumber()) != null)
+			throw new ReservationException(AppConstants.USER_ALREADY_REGISTERED, HttpStatus.BAD_REQUEST,
+					Severity.INFO);
+		
 		passengerRepository.save(modelMapper.map(reqDto, Passenger.class));
 		return reqDto;
 	}
 
 	@Override
-	public PassengerDto getPassengerDetails(String mobileNumber) {
-		Passenger passenger = passengerRepository.findByMobileNumber(mobileNumber);
+	public PassengerDto getPassengerDetails(String ContactNumber) {
+		Passenger passenger = passengerRepository.findByContactNumber(ContactNumber);
 		if (passenger == null) {
 			throw new ReservationException(AppConstants.INVALID_MOBILENUMBER, HttpStatus.BAD_REQUEST, Severity.INFO);
 		}
@@ -105,7 +110,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
 	@Override
 	public Ticket bookTicket(BookTicketDto reqDto) {
-		Passenger passenger = passengerRepository.findByPassengerId(reqDto.getPassengerId());
+		Passenger passenger = passengerRepository.findByUserId(reqDto.getUserId());
 		List<Availability> availabilities = availabilityRepository.findByTrainTrainIdAndDate(reqDto.getTrainId(),
 				reqDto.getDate());
 		String seatNumber = null;
@@ -210,8 +215,8 @@ public class RegistrationServiceImpl implements RegistrationService {
 
 	@Override
 	public StatusDto cancelTicket(CancelTicketDto reqDto) {
-		Passenger passenger = passengerRepository.findByMobileNumber(reqDto.getMobileNumber());
-		Ticket ticket = ticketRepository.findByPassengerPassengerIdAndTicketIdAndStatus(passenger.getPassengerId(),
+		Passenger passenger = passengerRepository.findByContactNumber(reqDto.getContactNumber());
+		Ticket ticket = ticketRepository.findByPassengerUserIdAndTicketIdAndStatus(passenger.getUserId(),
 				reqDto.getTicketId(), 0);
 		if (ticket == null) {
 			return new StatusDto(1, AppConstants.INVALID_TICKET_DETAILS);

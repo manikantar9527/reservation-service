@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CancelTicketDto {
-	private String mobileNumber;
+	private String contactNumber;
 	private Long ticketId;
 }

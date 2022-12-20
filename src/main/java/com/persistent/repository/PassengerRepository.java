@@ -8,8 +8,11 @@ import com.persistent.dao.Passenger;
 @Repository
 public interface PassengerRepository extends JpaRepository<Passenger, Long>{
 
-	Passenger findByMobileNumber(String mobileNumber);
 
-	Passenger findByPassengerId(Long passengerId);
+	Passenger findByUserId(Long userId);
+
+	Passenger findByContactNumber(String contactNumber);
+
+	Object findByUserIdOrContactNumber(Long userId,String contactNumber);
 
 }

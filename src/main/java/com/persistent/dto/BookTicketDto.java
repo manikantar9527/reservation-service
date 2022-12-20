@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BookTicketDto {
-	private Long passengerId;
+	private Long userId;
 	private TrainInfo train;
 	private Passenger passenger;
 	private Long trainId;

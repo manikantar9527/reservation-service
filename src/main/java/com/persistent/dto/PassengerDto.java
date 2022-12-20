@@ -13,9 +13,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 //@JsonIgnoreProperties({ "hibernateLazyInitializer" })
 public class PassengerDto {
-	private Long passengerId;
+	private Long userId;
 	private String name;
-	private String mobileNumber;
+	private String contactNumber;
 	private String email;
 	private String gender;
 	private Integer age;

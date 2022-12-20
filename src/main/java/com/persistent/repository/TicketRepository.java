@@ -8,6 +8,6 @@ import com.persistent.dao.Ticket;
 @Repository
 public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
-	Ticket findByPassengerPassengerIdAndTicketIdAndStatus(Long passengerId, Long ticketId, int i);
+	Ticket findByPassengerUserIdAndTicketIdAndStatus(Long userId, Long ticketId, int i);
 
 }

@@ -18,7 +18,7 @@ public class TicketDto {
 	private String ticketNumber;
 	private String ticketName;
 	private String trainId;
-	private Long passengerId;
+	private Long userId;
 
 	private Double ticketCost;
 	private String startingLocation;
