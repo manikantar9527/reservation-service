@@ -87,25 +87,9 @@ public class RegistrationServiceImpl implements RegistrationService {
 	}
 
 	@Override
-	public StatusDto ticketAvailability(AvailabilityDto reqDto) {
-
-		List<Availability> availabilities = availabilityRepository.findByTrainTrainIdAndDate(reqDto.getTrainId(),
+	public List<Availability> ticketAvailability(AvailabilityDto reqDto) {
+		return availabilityRepository.findByTrainTrainIdAndDate(reqDto.getTrainId(),
 				reqDto.getDate());
-		TrainInfo trainInfo = trainInfoRepository.findByTrainId(reqDto.getTrainId());
-		int seatsPerCoach = trainInfo.getTotalSeats() / trainInfo.getNoOfCoaches();
-		if (availabilities.isEmpty()) {
-			for (int i = 1; i < trainInfo.getNoOfCoaches() + 1; i++) {
-				availabilityRepository.save(new Availability(null, reqDto.getDate(), trainInfo, new Date(),
-						seatsPerCoach / 2, seatsPerCoach / 2, "c" + i));
-			}
-
-			return new StatusDto(0, AppConstants.SEATS_AVAILABLE);
-		}
-
-		if (availabilities.stream().collect(Collectors.summingInt(Availability::getNoOfLowerSeatsAvailable))
-				+ availabilities.stream().collect(Collectors.summingInt(Availability::getNoOfUpperSeatsAvailable)) != 0)
-			return new StatusDto(0, AppConstants.SEATS_AVAILABLE);
-		return new StatusDto(1, AppConstants.SEATS_NOT_AVAILABLE);
 	}
 
 	@Override
@@ -237,6 +221,23 @@ public class RegistrationServiceImpl implements RegistrationService {
 	@Override
 	public TrainInfo addTrainDetails(TrainInfo trainInfo) {
 		return trainInfoRepository.save(trainInfo);
+	}
+
+	@Override
+	public StatusDto addAvailability(AvailabilityDto reqDto) {
+
+		List<Availability> availabilities = availabilityRepository.findByTrainTrainIdAndDate(reqDto.getTrainId(),
+				reqDto.getDate());
+		TrainInfo trainInfo = trainInfoRepository.findByTrainId(reqDto.getTrainId());
+		int seatsPerCoach = trainInfo.getTotalSeats() / trainInfo.getNoOfCoaches();
+		if (availabilities.isEmpty()) {
+			for (int i = 1; i < trainInfo.getNoOfCoaches() + 1; i++) {
+				availabilityRepository.save(new Availability(null, reqDto.getDate(), trainInfo, new Date(),
+						seatsPerCoach / 2, seatsPerCoach / 2, "c" + i));
+			}
+			return new StatusDto(0, AppConstants.AVAILABILITY_DETAILS_ADDED);
+		}
+		return new StatusDto(1, AppConstants.AVAILABILITY_DETAILS_ALREADY_EXIST);
 	}
 
 }

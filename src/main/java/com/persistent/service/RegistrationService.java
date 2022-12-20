@@ -2,6 +2,7 @@ package com.persistent.service;
 
 import java.util.List;
 
+import com.persistent.dao.Availability;
 import com.persistent.dao.Ticket;
 import com.persistent.dao.TrainInfo;
 import com.persistent.dto.AvailabilityDto;
@@ -19,12 +20,14 @@ public interface RegistrationService {
 
 	List<TrainInfo> searchTrain(SearchTrainDto reqDto);
 
-	StatusDto ticketAvailability(AvailabilityDto reqDto);
+	List<Availability>  ticketAvailability(AvailabilityDto reqDto);
 
 	Ticket bookTicket(BookTicketDto reqDto);
 
 	StatusDto cancelTicket(CancelTicketDto reqDto);
 
 	TrainInfo addTrainDetails(TrainInfo train);
+
+	StatusDto addAvailability(AvailabilityDto reqDto);
 
 }

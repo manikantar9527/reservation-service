@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.persistent.dao.Availability;
 import com.persistent.dao.Ticket;
 import com.persistent.dao.TrainInfo;
 import com.persistent.dto.AvailabilityDto;
@@ -37,6 +38,11 @@ public class PassengerController {
 	public ResponseEntity<PassengerDto> updatePassengerDetails(@RequestBody PassengerDto passenger) {
 		return ResponseEntity.ok(service.addPassengerDetails(passenger));
 	}
+	
+	@PostMapping("add/availability")
+	public ResponseEntity<StatusDto> addAvailability(@RequestBody AvailabilityDto reqDto) {
+		return ResponseEntity.ok(service.addAvailability(reqDto));
+	}
 
 	@GetMapping("passeger/{mobileNumber}")
 	public ResponseEntity<PassengerDto> getPassengerDetails(@PathVariable String mobileNumber) {
@@ -49,7 +55,7 @@ public class PassengerController {
 	}
 
 	@PostMapping("ticket/availability")
-	public ResponseEntity<StatusDto> ticketAvailability(@RequestBody AvailabilityDto reqDto) {
+	public ResponseEntity<List<Availability> > ticketAvailability(@RequestBody AvailabilityDto reqDto) {
 		return ResponseEntity.ok(service.ticketAvailability(reqDto));
 	}
 

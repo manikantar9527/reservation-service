@@ -11,6 +11,8 @@ public class AppConstants {
 	public static final String SEATS_NOT_AVAILABLE_IN_LOWER ="lower seates not available";
 	public static final String INVALID_TICKET_DETAILS ="Invalid ticket details";
 	public static final String TICKET_CANCELLED_SUCCESSFULLY ="Ticket cancelled successfully";
+	public static final String AVAILABILITY_DETAILS_ADDED="Availability details added";
+	public static final String AVAILABILITY_DETAILS_ALREADY_EXIST="Availability details already exist";
 	
 	
 }
